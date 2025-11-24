@@ -10,11 +10,14 @@ app.get("/api/health", (req, res) => {
   res.json({ status: "ok" });
 });
 
-// existing
 app.use("/api/donations", donationsRouter);
 app.use("/api/users", usersRouter);
-
-// new
 app.use("/api/requests", requestsRouter);
+
+// Global error handler (Lab requirement)
+app.use((err, req, res, next) => {
+  console.error(err);
+  res.status(500).json({ error: "Internal server error" });
+});
 
 export default app;
