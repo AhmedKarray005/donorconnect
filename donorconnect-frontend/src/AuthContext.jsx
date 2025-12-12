@@ -1,14 +1,12 @@
-// src/AuthContext.jsx
 import { createContext, useContext, useEffect, useState } from "react";
 import api from "./api";
 
 const AuthContext = createContext(null);
 
 export function AuthProvider({ children }) {
-  const [user, setUser] = useState(null);   // { _id, name, email, role, ... }
+  const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  // Load user from token if exists
   useEffect(() => {
     const token = localStorage.getItem("token");
     if (!token) {
@@ -38,16 +36,15 @@ export function AuthProvider({ children }) {
     setUser(meRes.data);
   }
 
-async function register(name, email, password, role = "donor", extra = {}) {
-  await api.post("/auth/register", {
-    name,
-    email,
-    password,
-    role,
-    ...extra
-  });
-}
-
+  async function register(name, email, password, role = "donor", extra = {}) {
+    await api.post("/auth/register", {
+      name,
+      email,
+      password,
+      role,
+      ...extra
+    });
+  }
 
   function logout() {
     localStorage.removeItem("token");
