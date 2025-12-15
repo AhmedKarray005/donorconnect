@@ -29,7 +29,13 @@ router.post(
   createDonation
 );
 
-router.put("/:id", authenticateToken, requireRole("donor"), updateDonation);
+router.put(
+  "/:id",
+  authenticateToken,
+  requireRole("donor"),
+  upload.single("image"),
+  updateDonation
+);
 router.delete("/:id", authenticateToken, requireRole("donor"), deleteDonation);
 
 export default router;
