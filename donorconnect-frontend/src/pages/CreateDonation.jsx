@@ -1,14 +1,15 @@
-// src/pages/CreateDonation.jsx
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import api from "../api";
 import { useAuth } from "../AuthContext";
+import { useNotification } from "../NotificationContext";
 
 export default function CreateDonation() {
   const { user } = useAuth();
   const navigate = useNavigate();
-const [imageFile, setImageFile] = useState(null);
+  const { notify } = useNotification();
 
+  const [imageFile, setImageFile] = useState(null);
   const [form, setForm] = useState({
     title: "",
     description: "",
@@ -25,96 +26,115 @@ const [imageFile, setImageFile] = useState(null);
 
   function handleChange(e) {
     const { name, value } = e.target;
-
     setForm((prev) => ({
       ...prev,
       [name]: name === "quantity" ? Number(value) : value
     }));
   }
-function handleFileChange(e) {
-  const file = e.target.files[0];
-  setImageFile(file || null);
-}
 
-async function handleSubmit(e) {
-  e.preventDefault();
-  setError("");
-  setSubmitting(true);
-
-  try {
-    const fd = new FormData();
-    Object.entries(form).forEach(([key, value]) => {
-      fd.append(key, value);
-    });
-    if (imageFile) {
-      fd.append("image", imageFile);
-    }
-
-    await api.post("/donations", fd, {
-      headers: {
-        "Content-Type": "multipart/form-data"
-      }
-    });
-
-    navigate("/donations");
-  } catch (err) {
-    if (err.response && err.response.data) {
-      const data = err.response.data;
-
-      if (data.fields) {
-        setError(Object.values(data.fields).join(" - "));
-      } else if (data.error) {
-        setError(data.error);
-      } else {
-        setError("Failed to create donation");
-      }
-    } else {
-      setError("Failed to create donation");
-    }
-  } finally {
-    setSubmitting(false);
+  function handleFileChange(e) {
+    const file = e.target.files[0];
+    setImageFile(file || null);
   }
-}
+
+  async function handleSubmit(e) {
+    e.preventDefault();
+    setError("");
+
+    if (form.quantity < 1) {
+      const msg = "Quantity must be at least 1.";
+      setError(msg);
+      notify(msg, "error");
+      return;
+    }
+
+    if (!form.availableDate) {
+      const msg = "Available date is required.";
+      setError(msg);
+      notify(msg, "error");
+      return;
+    }
+
+    setSubmitting(true);
+
+    try {
+      const fd = new FormData();
+      Object.entries(form).forEach(([key, value]) => {
+        fd.append(key, value);
+      });
+      if (imageFile) {
+        fd.append("image", imageFile);
+      }
+
+      await api.post("/donations", fd, {
+        headers: {
+          "Content-Type": "multipart/form-data"
+        }
+      });
+
+      notify("Donation created successfully.", "success");
+      navigate("/donations");
+    } catch (err) {
+      let msg = "Failed to create donation";
+
+      if (err.response && err.response.data) {
+        const data = err.response.data;
+
+        if (data.fields) {
+          msg = Object.values(data.fields).join(" - ");
+        } else if (data.error) {
+          msg = data.error;
+        }
+      }
+
+      setError(msg);
+      notify(msg, "error");
+    } finally {
+      setSubmitting(false);
+    }
+  }
 
   return (
-    <div style={{ maxWidth: 600, margin: "20px auto" }}>
-      <h2>Create Donation</h2>
+    <div className="page">
+      <div className="page-header">
+        <div>
+          <h2 className="page-title">Create a new donation</h2>
+          <p className="page-subtitle">
+            Add an item you want to give away. NGOs will be able to request a
+            pickup with a proposed date.
+          </p>
+        </div>
+        {user && <span className="badge">Donor: {user.name}</span>}
+      </div>
 
-      {user && (
-        <p>
-          Creating as <strong>{user.name}</strong> ({user.role})
-        </p>
-      )}
+      {error && <p className="text-danger">{error}</p>}
 
-      {error && <p style={{ color: "red" }}>{error}</p>}
-
-      <form onSubmit={handleSubmit}>
-        <div style={{ marginBottom: 10 }}>
+      <form onSubmit={handleSubmit} className="form-grid">
+        <div className="form-field">
           <label>Title</label>
-          <br />
           <input
             type="text"
             name="title"
             value={form.title}
             onChange={handleChange}
             required
+            placeholder="Winter jackets for adults"
           />
         </div>
 
-        <div style={{ marginBottom: 10 }}>
+        <div className="form-field">
           <label>Description</label>
-          <br />
           <textarea
             name="description"
             value={form.description}
             onChange={handleChange}
             rows={3}
+            placeholder="Short description, sizes, brand, any important details..."
           />
         </div>
 
-        <div style={{ marginBottom: 10 }}>
+        <div className="form-field">
           <label>Category</label>
-          <br />
           <input
             type="text"
             name="category"
@@ -125,9 +145,8 @@ async function handleSubmit(e) {
           />
         </div>
 
-        <div style={{ marginBottom: 10 }}>
+        <div className="form-field">
           <label>Quantity</label>
-          <br />
           <input
             type="number"
             name="quantity"
@@ -138,9 +157,8 @@ async function handleSubmit(e) {
           />
         </div>
 
-        <div style={{ marginBottom: 10 }}>
+        <div className="form-field">
           <label>Condition</label>
-          <br />
           <input
             type="text"
             name="condition"
@@ -150,21 +168,20 @@ async function handleSubmit(e) {
           />
         </div>
 
-        <div style={{ marginBottom: 10 }}>
+        <div className="form-field">
           <label>Pickup Location</label>
-          <br />
           <input
             type="text"
             name="pickupLocation"
             value={form.pickupLocation}
             onChange={handleChange}
             required
+            placeholder="City, neighborhood..."
           />
         </div>
 
-        <div style={{ marginBottom: 10 }}>
-          <label>Available Date</label>
-          <br />
+        <div className="form-field">
+          <label>Available from</label>
           <input
             type="date"
             name="availableDate"
@@ -173,16 +190,17 @@ async function handleSubmit(e) {
             required
           />
         </div>
-        <div style={{ marginBottom: 10 }}>
-  <label>Image</label>
-  <br />
-  <input type="file" accept="image/*" onChange={handleFileChange} />
-</div>
 
+        <div className="form-field">
+          <label>Image</label>
+          <input type="file" accept="image/*" onChange={handleFileChange} />
+          <p className="form-help">
+            Optional, but photos help NGOs assess the item quickly.
+          </p>
+        </div>
 
-        <div style={{ marginBottom: 10 }}>
+        <div className="form-field">
           <label>Status</label>
-          <br />
           <select
             name="status"
             value={form.status}
@@ -195,9 +213,22 @@ async function handleSubmit(e) {
           </select>
         </div>
 
-        <button type="submit" disabled={submitting}>
-          {submitting ? "Creating..." : "Create Donation"}
-        </button>
+        <div style={{ marginTop: 8, display: "flex", gap: 10 }}>
+          <button
+            type="submit"
+            className="btn btn-primary"
+            disabled={submitting}
+          >
+            {submitting ? "Creating..." : "Create donation"}
+          </button>
+          <button
+            type="button"
+            className="btn btn-outline"
+            onClick={() => navigate("/donations")}
+          >
+            Cancel
+          </button>
+        </div>
       </form>
     </div>
   );

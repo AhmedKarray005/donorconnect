@@ -122,12 +122,33 @@ export async function createDonation(req, res, next) {
 export async function updateDonation(req, res, next) {
   try {
     const { id } = req.params;
+    const userId = req.user.id;
+
+    console.log(`[UPDATE] Donation ID: ${id}, User ID: ${userId}, Body:`, req.body);
 
     if (!mongoose.Types.ObjectId.isValid(id)) {
       return res.status(400).json({ error: "Invalid donation id" });
     }
 
-    const validation = validateDonationPayload(req.body, { isPartial: true });
+    // Find the donation first to verify ownership
+    const donation = await Donation.findById(id);
+    if (!donation) {
+      return res.status(404).json({ error: "Donation not found" });
+    }
+
+    // Check if the logged-in user is the owner
+    if (donation.donorId.toString() !== userId) {
+      return res.status(403).json({ error: "You can only update your own donations" });
+    }
+
+    // Body from multipart/form-data is all strings → adjust
+    const body = { ...req.body };
+
+    if (body.quantity !== undefined) {
+      body.quantity = Number(body.quantity);
+    }
+
+    const validation = validateDonationPayload(body, { isPartial: true });
     if (!validation.isValid) {
       return res.status(400).json({
         error: "Validation failed",
@@ -135,17 +156,23 @@ export async function updateDonation(req, res, next) {
       });
     }
 
-    const updated = await Donation.findByIdAndUpdate(id, req.body, {
+    // If new image is provided, update imageUrl
+    if (req.file) {
+      body.imageUrl = `/uploads/${req.file.filename}`;
+    }
+
+    console.log(`[UPDATE] Updating with body:`, body);
+
+    const updated = await Donation.findByIdAndUpdate(id, body, {
       new: true,
       runValidators: true
     }).lean();
 
-    if (!updated) {
-      return res.status(404).json({ error: "Donation not found" });
-    }
+    console.log(`[UPDATE] Result:`, updated);
 
     res.status(200).json(updated);
   } catch (err) {
+    console.error(`[UPDATE] Error:`, err);
     next(err);
   }
 }
