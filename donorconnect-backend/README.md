@@ -1,98 +1,76 @@
-# DevOps Lab – Student Project (Node.js + Jira/GitHub + CI/CD)
+# DonorConnect API
 
-This repository is a **teaching template** for a 4-student DevOps mini-project.
-It demonstrates a realistic workflow: **PLAN (Jira) → CODE (Git/VS Code) → BUILD/TEST (GitHub Actions) → REVIEW (PRs) → DEPLOY (optional)**.
+Express/Mongoose backend for the DonorConnect student application.
+Start from this directory, not the repository root.
 
-> **What you get here**
-> - Minimal **Express** API with auto-mounted routes
-> - **Vitest + Supertest** for integration & unit tests
-> - Coverage thresholds enforced in CI
-> - **GitHub Actions** workflow for lint + tests + coverage artifact
-> - Clear file layout for a team of 4
+## Setup
 
----
-
-## Quickstart
+Use Node.js 22.12+ in the 22.x line and a development MongoDB database.
 
 ```bash
 npm ci
-npm run dev          # http://localhost:3000
-npm test -- --coverage
 ```
 
-Open `coverage/index.html` for a visual coverage report (locally).
+Supply the following values privately to the process:
 
----
+| Variable | Meaning |
+| --- | --- |
+| `MONGO_URI` | Connection string for an isolated development database |
+| `JWT_SECRET` | Strong, unique JWT signing secret |
+| `PORT` | Optional HTTP port; defaults to 3000 |
 
-## Routes
+Set the variables before launching Node. The current auth modules capture their
+configuration during module import, so process environment variables avoid
+depending on dotenv import order. There is an unsafe development fallback in
+the current code; always provide `JWT_SECRET`. Removing that fallback and
+validating configuration at startup remain hardening work.
 
-- `GET /` – basic JSON greeting
-- `GET /health` – health check (200 OK)
-- `GET /version` – returns `{ version }` from `package.json`
-- `GET /info` – returns `{ name, version, node, uptime }`
-- `GET /boom` – triggers an error to test the global error handler
+Create the local upload directory if it does not exist:
 
-Routes are **auto-mounted** from `src/routes/auto/*.route.js` so each student can add a file without touching `src/app.js` (fewer merge conflicts).
-
----
-
-## Tests
-
-- **Integration tests** (Supertest) target HTTP endpoints in `test/*.test.js`.
-- **Unit tests** target internal logic in `test/unit/*.test.js`.
-
-Coverage thresholds (Lines/Functions/Statements ≥ 80%, Branches ≥ 70%) are set in `package.json`.  
-If coverage drops below thresholds, CI fails and blocks the merge (quality gate).
-
----
-
-## Branch & Commit Convention (Jira-friendly)
-
-- Branch: `feature/<ISSUE-KEY>-<short-desc>` → e.g., `feature/SHMS-12-info-endpoint`
-- Commit: `feat(<ISSUE-KEY>): <what>` → e.g., `feat(SHMS-12): implement /info endpoint`
-- PR title: `<ISSUE-KEY> | <title>` → e.g., `SHMS-12 | Add /info endpoint`
-
-If you install **GitHub for Jira**, issues will link automatically when the key appears in branch/commit/PR.
-
----
-
-## CI (GitHub Actions)
-
-A workflow is included at `.github/workflows/ci.yml` that runs on pushes and PRs to `main`:
-
-- Install Node and deps
-- `npm run lint`
-- `npm test -- --coverage`
-- Upload `coverage/` as an artifact
-
-> Badge (enable after first run):
->
-> ```md
-> ![CI](https://github.com/<org>/<repo>/actions/workflows/ci.yml/badge.svg)
-> ```
-
----
-
-## Project layout
-
-```
-src/
-  app.js          # Express app (auto-mount + global error handler)
-  index.js        # server entry (not used by tests)
-  routes/auto/    # students add *.route.js files here
-  utils/          # small testable helpers
-test/
-  *.test.js       # integration (HTTP) tests
-  unit/*.test.js  # pure unit tests
+```bash
+node -e "require('node:fs').mkdirSync('uploads', { recursive: true })"
+npm run dev
 ```
 
----
+For a normal process without the development watcher, use `npm start`.
+Startup waits for MongoDB connectivity before accepting requests.
 
-## Useful scripts
+```bash
+curl --fail http://localhost:3000/api/health
+```
 
-- `npm run dev` – start dev server with nodemon
-- `npm test` – run all tests (Vitest)
-- `npm test -- --coverage` – with coverage
-- `npm run lint` – ESLint check
+On Windows PowerShell, use `curl.exe` for the same curl command.
 
-Enjoy the lab!
+## API map
+
+| Prefix | Implemented route family |
+| --- | --- |
+| `/api/auth` | Registration, login and current user |
+| `/api/users` | Administrative user management and first-admin bootstrap |
+| `/api/donations` | Public list/detail, donor list and mutation routes |
+| `/api/requests` | Request management and accept/reject/cancel transitions |
+| `/uploads` | Static uploaded files |
+
+Login returns a JWT used as `Authorization: Bearer <token>`.
+Donations can use multipart form data with an `image` field; the upload
+middleware limits file size to 5 MB and checks the supplied MIME type.
+A MIME check alone is not content validation.
+
+## Tests and development limits
+
+```bash
+npm test
+npm run lint
+```
+
+The current baseline is 9 passing utility tests and 6 failing legacy HTTP
+tests. Lint cannot run without an ESLint configuration. The nested workflow
+also needs relocation and working-directory changes before it becomes active
+for this monorepo.
+
+This API needs an authorization and credential-handling hardening pass before
+public deployment. Treat admin bootstrap and diagnostic routes as
+development-only functionality. An isolated local demo is the intended scope
+of these instructions.
+
+See [the repository overview](../README.md) for complete review status.
