@@ -1,16 +1,45 @@
-# React + Vite
+# DonorConnect frontend
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+React interface for the DonorConnect donation and request API.
 
-Currently, two official plugins are available:
+## Run locally
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+Use Node.js 22.12+ in the 22.x line. From this directory:
 
-## React Compiler
+```bash
+npm ci
+npm run dev
+```
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+Open the URL printed by Vite. The backend must run separately at
+`http://localhost:3000`; the API client in `src/api.js` currently uses that
+address directly.
 
-## Expanding the ESLint configuration
+## Implemented UI
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+- Landing, registration and login pages.
+- Donation browsing and donor donation creation/management.
+- Request management.
+- Authentication and notification contexts and a protected-route component.
+
+The API client attaches the JWT stored in browser local storage. Client route
+guards improve navigation but do not replace server-side authorization.
+
+## Build and checks
+
+```bash
+npm run build
+npm run preview
+npm run lint
+```
+
+The production bundle built successfully with Node.js 22.13 during the
+29 September 2026 review. Lint currently reports 10 errors and 3 warnings:
+unused catch variables, React refresh exports and effect/dependency concerns.
+These remain unresolved.
+
+The preview command serves the built frontend locally. It is not a complete
+deployment: configurable API URLs, token-handling decisions, backend
+hardening, persistent uploads and end-to-end checks are still needed.
+
+See [the repository overview](../README.md).
