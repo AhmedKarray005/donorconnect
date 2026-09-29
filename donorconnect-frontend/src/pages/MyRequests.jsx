@@ -1,7 +1,7 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import api from "../api";
-import { useAuth } from "../AuthContext";
-import { useNotification } from "../NotificationContext";
+import { useAuth } from "../useAuth.js";
+import { useNotification } from "../useNotification.js";
 
 export default function MyRequests() {
   const { user } = useAuth();
@@ -13,19 +13,19 @@ export default function MyRequests() {
   const [confirm, setConfirm] = useState(null);
   // confirm = { id, action, title, description }
 
-  async function load() {
+  const load = useCallback(async () => {
     try {
       const res = await api.get("/requests");
       setRequests(res.data || []);
-    } catch (err) {
+    } catch {
       setError("Failed to load requests");
       notify("Could not load requests.", "error");
     }
-  }
+  }, [notify]);
 
   useEffect(() => {
     load();
-  }, [notify]);
+  }, [load]);
 
   async function handleAction(id, action) {
     try {

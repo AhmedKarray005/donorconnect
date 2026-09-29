@@ -4,9 +4,14 @@ A student full-stack application for connecting donors and nonprofit
 organizations. Donors publish items; organizations browse donations and submit
 requests. The repository contains an Express/MongoDB API and a React interface.
 
-**Status:** development project. The frontend builds, but the backend test suite
-and both lint checks need repair. Authentication and authorization need further
-hardening before shared or public deployment.
+**Status:** student development project with automated API checks, passing lint
+and a frontend production build. Selected authentication and ownership paths
+are regression-tested; further deployment hardening is still needed.
+
+![DonorConnect landing page with illustrative dashboard data](docs/landing-preview.png)
+
+Local browser capture; the preview cards contain illustrative data. Landing,
+login and both donor/NPO registration forms were checked in the browser.
 
 ## Architecture
 
@@ -31,10 +36,10 @@ test or a claim that every authorization path is secure.
 ```text
 donorconnect-backend/
   src/                  API, models, middleware and validation
-  test/                 Legacy HTTP tests and utility tests
-  .github/workflows/    Legacy nested workflow
+  test/                 API/security, isolated database and utility tests
 donorconnect-frontend/
   src/                  React pages, contexts, API client and route guard
+.github/workflows/      Monorepo backend/frontend checks
 ```
 
 Run commands in the relevant component directory. The root is not an npm
@@ -44,8 +49,9 @@ workspace. See the [backend guide](donorconnect-backend/README.md) and
 ## Local development
 
 Use Node.js 22.12 or later in the 22.x line (reviewed with 22.13), npm and a
-separately provisioned development MongoDB database. The older backend
-`engines` declaration is looser than its current dependencies allow.
+separately provisioned development MongoDB database. The backend declares its
+dependency requirement of Node.js 20.19 or later; Node.js 22.12+ also satisfies
+the frontend's requirements.
 
 1. Install dependencies separately with `npm ci` in each component.
 2. Supply `MONGO_URI` and a strong `JWT_SECRET` to the backend process using
@@ -65,21 +71,37 @@ this guide.
 | Backend dependency install | Passed with lifecycle scripts disabled |
 | Frontend dependency install | Passed with lifecycle scripts disabled |
 | Frontend `npm run build` | Passed |
-| Backend `npm test` | 9 passed, 6 failed |
-| Backend `npm run lint` | Fails: no ESLint configuration |
-| Frontend `npm run lint` | 10 errors, 3 warnings |
-| Database-backed app startup / user flows | Not exercised in this review |
+| Backend `npm test` locally | 30 passed; 2 database integration cases skipped without a disposable MongoDB service |
+| Backend `npm run lint` | Passed |
+| Frontend `npm run lint` | Passed |
+| Database-backed API flows | CI runs the two integration cases using an isolated MongoDB service |
 | Containers / Kubernetes | No such deployment configuration on this branch |
 
-The six failing tests target legacy `/health`, `/info`, `/version` and `/boom`
-routes. The current health endpoint is `GET /api/health`. Resolve the intended
-API contract before changing those tests; a green frontend build does not prove
-that API workflows work.
+The current health endpoint is `GET /api/health`. Obsolete tests for removed lab
+routes were replaced with checks for the current API, registration roles,
+configuration, admin password hashing and donation deletion ownership. Existing
+utility tests remain.
 
-The workflow under `donorconnect-backend/.github/workflows/` is not at the
-repository-root location used by GitHub Actions. It also assumes the old
-single-component layout. Active CI, lint repair and meaningful API tests remain
-follow-up work.
+[Monorepo CI](.github/workflows/ci.yml) runs backend lint/tests against a
+disposable MongoDB service and frontend lint/build in separate jobs. Each job
+uses the correct component directory and lockfile. Integration tests only use
+`TEST_MONGO_URI`, require a loopback service and create a randomly named test
+database; they never use the application's `MONGO_URI`.
+
+## Security decisions and remaining limits
+
+- JWT configuration is shared by signing and verification; startup rejects a
+  missing secret or the former development fallback.
+- Public registration only permits donor/npo roles and stores the validated
+  profile fields. Administrative creation hashes passwords too.
+- Donation deletion includes the authenticated owner in the database filter.
+- User updates allowlist fields; first-admin bootstrap is disabled by default.
+- Diagnostics, donation update field restrictions, request state transitions,
+  rate limiting, upload content checks,
+  CORS policy and browser token storage still need a deployment-focused review.
+
+These controls and tests cover specific paths, not a comprehensive security
+assessment or a production-readiness claim.
 
 ## Deployment scope
 

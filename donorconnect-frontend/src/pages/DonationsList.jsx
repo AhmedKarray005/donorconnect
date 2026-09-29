@@ -1,7 +1,7 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import api from "../api";
-import { useAuth } from "../AuthContext";
-import { useNotification } from "../NotificationContext";
+import { useAuth } from "../useAuth.js";
+import { useNotification } from "../useNotification.js";
 
 export default function DonationsList() {
   const { user } = useAuth();
@@ -27,26 +27,28 @@ export default function DonationsList() {
   const isDonor = user?.role === "donor";
   const isNpo = user?.role === "npo";
 
-  async function loadDonations() {
-    try {
-      setError("");
-      setLoading(true);
-
-      const res = await api.get("/donations");
+  const fetchDonations = useCallback(() => {
+    return api.get("/donations").then((res) => {
       const items = Array.isArray(res.data) ? res.data : res.data.data || [];
       setDonations(items);
-    } catch (err) {
+    }).catch((err) => {
       console.error(err);
       setError("Failed to load donations");
       notify("Could not load donations.", "error");
-    } finally {
+    }).finally(() => {
       setLoading(false);
-    }
+    });
+  }, [notify]);
+
+  async function loadDonations() {
+    setError("");
+    setLoading(true);
+    await fetchDonations();
   }
 
   useEffect(() => {
-    loadDonations();
-  }, []);
+    fetchDonations();
+  }, [fetchDonations]);
 
   const categories = useMemo(() => {
     const set = new Set();

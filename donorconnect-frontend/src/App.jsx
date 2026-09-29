@@ -7,7 +7,7 @@ import CreateDonation from "./pages/CreateDonation.jsx";
 import MyDonations from "./pages/MyDonations.jsx";
 import MyRequests from "./pages/MyRequests.jsx";
 import Landing from "./pages/Landing.jsx";
-import { useAuth } from "./AuthContext.jsx";
+import { useAuth } from "./useAuth.js";
 
 function AppShell({ children }) {
   const { user, logout } = useAuth();

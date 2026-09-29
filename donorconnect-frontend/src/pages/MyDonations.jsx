@@ -1,7 +1,7 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import api from "../api";
-import { useAuth } from "../AuthContext";
-import { useNotification } from "../NotificationContext";
+import { useAuth } from "../useAuth.js";
+import { useNotification } from "../useNotification.js";
 
 export default function MyDonations() {
   const { user } = useAuth();
@@ -33,24 +33,23 @@ export default function MyDonations() {
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [deleting, setDeleting] = useState(false);
 
-  async function load() {
-    try {
-      const [donationsRes, requestsRes] = await Promise.all([
+  const load = useCallback(() => {
+    return Promise.all([
         api.get("/donations/mine"),
         api.get("/requests")
-      ]);
+      ]).then(([donationsRes, requestsRes]) => {
       setDonations(donationsRes.data || []);
       setRequests(requestsRes.data || []);
       setError("");
-    } catch (err) {
+    }).catch(() => {
       setError("Failed to load your donations");
       notify("Could not load donations/requests.", "error");
-    }
-  }
+    });
+  }, [notify]);
 
   useEffect(() => {
     load();
-  }, [notify]);
+  }, [load]);
 
   // ----- CREATE / EDIT MODAL -----
 
@@ -206,7 +205,7 @@ export default function MyDonations() {
       notify("Donation deleted.", "info");
       await load();
       closeDeleteModal();
-    } catch (err) {
+    } catch {
       notify("Failed to delete donation.", "error");
       setDeleting(false);
     }

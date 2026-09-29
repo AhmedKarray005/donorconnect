@@ -1,8 +1,8 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import api from "../api";
-import { useAuth } from "../AuthContext";
-import { useNotification } from "../NotificationContext";
+import { useAuth } from "../useAuth.js";
+import { useNotification } from "../useNotification.js";
 
 export default function CreateDonation() {
   const { user } = useAuth();

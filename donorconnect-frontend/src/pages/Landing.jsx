@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { useAuth } from "../AuthContext";
+import { useAuth } from "../useAuth.js";
 import api from "../api";
 
 export default function Landing() {
@@ -46,7 +46,7 @@ export default function Landing() {
             total: requests.length
           });
         }
-      } catch (e) {
+      } catch {
         setSummary(null);
       } finally {
         setSummaryLoading(false);
@@ -176,7 +176,7 @@ export default function Landing() {
             <div className="landing-preview-header">
               <div>
                 <div className="landing-preview-title">
-                  Snapshot of a real donor dashboard
+                  Example donor dashboard
                 </div>
                 <div className="landing-preview-status">
                   3 active donations · 2 pending pickup requests

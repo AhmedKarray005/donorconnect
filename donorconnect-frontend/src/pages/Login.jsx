@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { useAuth } from "../AuthContext";
-import { useNotification } from "../NotificationContext";
+import { useAuth } from "../useAuth.js";
+import { useNotification } from "../useNotification.js";
 
 export default function Login() {
   const { login } = useAuth();
@@ -33,7 +33,7 @@ export default function Login() {
       await login(form.email, form.password);
       notify("Welcome back.", "success");
       navigate("/donations");
-    } catch (err) {
+    } catch {
       const msg = "Invalid email or password";
       setError(msg);
       notify(msg, "error");
