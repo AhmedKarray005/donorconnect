@@ -1,10 +1,14 @@
 // src/controllers/user.controller.js
 import User from "../models/user.model.js";
 import bcrypt from "bcryptjs";
+import { validateUserPayload } from "../validation/user.validation.js";
 
 // POST /api/users/init-admin (bootstrap: create first admin only if none exist)
 export async function initFirstAdmin(req, res, next) {
   try {
+    if (process.env.ENABLE_ADMIN_BOOTSTRAP !== "true") {
+      return res.status(403).json({ error: "Admin bootstrap is disabled" });
+    }
     const { name, email, password } = req.body;
 
     if (!name || !email || !password) {
@@ -90,10 +94,11 @@ export async function createUser(req, res, next) {
       return res.status(409).json({ error: "Email already exists" });
     }
 
+    const hashed = await bcrypt.hash(password, 10);
     const user = await User.create({
       name,
       email,
-      password, // plain here; for real usage prefer using register endpoint (hashed)
+      password: hashed,
       role: role || "donor"
     });
 
@@ -110,18 +115,18 @@ export async function createUser(req, res, next) {
 export async function updateUser(req, res, next) {
   try {
     const { id } = req.params;
-    const updates = { ...req.body };
+    const allowedFields = ["name", "email", "role", "phone", "address", "organizationName", "mission", "city", "isActive"];
+    const updates = Object.fromEntries(
+      Object.entries(req.body).filter(([key]) => allowedFields.includes(key))
+    );
+    const validation = validateUserPayload(updates, { isPartial: true });
 
-    // do not allow changing password here
-    delete updates.password;
-const validation = validateUserPayload(req.body, { isPartial: true });
-
-if (!validation.isValid) {
-  return res.status(400).json({
-    error: "Validation failed",
-    fields: validation.errors
-  });
-}
+    if (!validation.isValid) {
+      return res.status(400).json({
+        error: "Validation failed",
+        fields: validation.errors
+      });
+    }
 
     const updated = await User.findByIdAndUpdate(id, updates, {
       new: true,

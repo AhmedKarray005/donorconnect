@@ -1,6 +1,5 @@
-import { createContext, useCallback, useContext, useRef, useState } from "react";
-
-const NotificationContext = createContext(null);
+import { useCallback, useRef, useState } from "react";
+import { NotificationContext } from "./useNotification";
 
 export function NotificationProvider({ children }) {
   const [notification, setNotification] = useState(null);
@@ -36,12 +35,4 @@ export function NotificationProvider({ children }) {
       )}
     </NotificationContext.Provider>
   );
-}
-
-export function useNotification() {
-  const ctx = useContext(NotificationContext);
-  if (!ctx) {
-    throw new Error("useNotification must be used within NotificationProvider");
-  }
-  return ctx;
 }

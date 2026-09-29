@@ -183,7 +183,10 @@ export async function deleteDonation(req, res, next) {
   try {
     const { id } = req.params;
 
-    const deleted = await Donation.findByIdAndDelete(id).lean();
+    const deleted = await Donation.findOneAndDelete({
+      _id: id,
+      donorId: req.user.id
+    }).lean();
 
     if (!deleted) {
       return res.status(404).json({ error: "Donation not found" });

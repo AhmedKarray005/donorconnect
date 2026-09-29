@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { useAuth } from "../AuthContext";
-import { useNotification } from "../NotificationContext";
+import { useAuth } from "../useAuth.js";
+import { useNotification } from "../useNotification.js";
 
 export default function Register() {
   const { register } = useAuth();
@@ -82,7 +82,7 @@ export default function Register() {
 
       notify("Account created. Please log in.", "success");
       navigate("/login");
-    } catch (err) {
+    } catch {
       const msg = "Registration failed";
       setError(msg);
       notify(msg, "error");

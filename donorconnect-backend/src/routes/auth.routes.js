@@ -5,14 +5,19 @@ import jwt from "jsonwebtoken";
 import User from "../models/user.model.js";
 import { authenticateToken } from "../middleware/auth.middleware.js";
 import { validateUserPayload } from "../validation/user.validation.js";
+import { getJwtSecret } from "../config/auth.js";
 
 const router = express.Router();
-
-const JWT_SECRET = process.env.JWT_SECRET || "dev-secret";
 
 // POST /api/auth/register
 router.post("/register", async (req, res, next) => {
   try {
+    if (req.body.role !== undefined && !["donor", "npo"].includes(req.body.role)) {
+      return res.status(400).json({
+        error: "Validation failed",
+        fields: { role: "Public registration only supports donor and npo roles" }
+      });
+    }
     // 1) VALIDATION FIRST
     const validation = validateUserPayload(req.body, { isRegister: true });
 
@@ -24,7 +29,7 @@ router.post("/register", async (req, res, next) => {
     }
 
     // 2) THEN SAME LOGIC AS BEFORE
-    const { name, email, password, role } = req.body;
+    const { name, email, password, role, phone, address, organizationName, mission, city } = req.body;
 
     const existing = await User.findOne({ email }).lean();
     if (existing) {
@@ -37,7 +42,12 @@ router.post("/register", async (req, res, next) => {
       name,
       email,
       password: hashed,
-      role: role || "donor"
+      role: role || "donor",
+      phone,
+      address,
+      organizationName,
+      mission,
+      city
     });
 
     const safe = user.toObject();
@@ -72,7 +82,7 @@ router.post("/login", async (req, res, next) => {
 
     const token = jwt.sign(
       { id: user._id.toString(), role: user.role, email: user.email },
-      JWT_SECRET,
+      getJwtSecret(),
       { expiresIn: "1h" }
     );
 

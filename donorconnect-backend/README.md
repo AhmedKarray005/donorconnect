@@ -18,12 +18,17 @@ Supply the following values privately to the process:
 | `MONGO_URI` | Connection string for an isolated development database |
 | `JWT_SECRET` | Strong, unique JWT signing secret |
 | `PORT` | Optional HTTP port; defaults to 3000 |
+| `ENABLE_ADMIN_BOOTSTRAP` | Optional; defaults off. Set `true` only during controlled, isolated first-admin setup |
 
-Set the variables before launching Node. The current auth modules capture their
-configuration during module import, so process environment variables avoid
-depending on dotenv import order. There is an unsafe development fallback in
-the current code; always provide `JWT_SECRET`. Removing that fallback and
-validating configuration at startup remain hardening work.
+Set the variables before launching Node, or use an existing ignored local
+environment file. Shared authentication configuration loads dotenv before use;
+startup rejects a missing signing secret or the former development fallback.
+Never publish credentials or modify a shared environment file for a test run.
+
+First-admin bootstrap is disabled by default. Enable it only in an isolated
+local setup, create the first administrator, then disable it and restart before
+exposing the API. The existing-admin guard remains, but this opt-in bootstrap
+is not intended to be a public onboarding mechanism.
 
 Create the local upload directory if it does not exist:
 
@@ -63,10 +68,16 @@ npm test
 npm run lint
 ```
 
-The current baseline is 9 passing utility tests and 6 failing legacy HTTP
-tests. Lint cannot run without an ESLint configuration. The nested workflow
-also needs relocation and working-directory changes before it becomes active
-for this monorepo.
+The local baseline is 30 passing tests and clean lint. Two additional integration
+cases run when `TEST_MONGO_URI` names a disposable loopback MongoDB service.
+CI provisions that service automatically. The tests create and remove only their
+own randomly named database; they do not read application database credentials.
+
+Coverage includes current health behavior, registration-role restrictions,
+password hashing, JWT configuration, bootstrap gating, user update filtering and
+donation deletion ownership. The former `/info`, `/version` and `/boom` HTTP
+tests were replaced because those routes are not part of the current app;
+their utility-level tests remain.
 
 This API needs an authorization and credential-handling hardening pass before
 public deployment. Treat admin bootstrap and diagnostic routes as

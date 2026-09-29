@@ -1,7 +1,6 @@
 // src/middleware/auth.middleware.js
 import jwt from "jsonwebtoken";
-
-const JWT_SECRET = process.env.JWT_SECRET || "dev-secret";
+import { getJwtSecret } from "../config/auth.js";
 
 // Check that the request has a valid JWT
 export function authenticateToken(req, res, next) {
@@ -14,7 +13,7 @@ export function authenticateToken(req, res, next) {
   }
 
   try {
-    const payload = jwt.verify(token, JWT_SECRET);
+    const payload = jwt.verify(token, getJwtSecret(), { algorithms: ["HS256"] });
     // Attach user info to the request
     req.user = {
       id: payload.id,
