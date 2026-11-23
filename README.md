@@ -109,3 +109,7 @@ The frontend API address is currently hardcoded to
 `http://localhost:3000/api` in `src/api.js`. Uploads use backend-local storage.
 No Dockerfile, Compose stack, Kubernetes manifests, GitOps controller or
 monitoring stack is supplied in the current main layout.
+
+## License
+
+[MIT](LICENSE). Written by Ahmed Karray and Amine Khe.
